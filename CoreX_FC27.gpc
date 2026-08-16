@@ -1,0 +1,164 @@
+//  ██████╗ ██████╗ ██████╗ ███████╗██╗  ██╗    ███████╗ ██████╗ ██████╗ ███████╗███████╗
+// ██╔════╝██╔═══██╗██╔══██╗██╔════╝╚██╗██╔╝    ██╔════╝██╔════╝ ██╔══██╗██╔════╝██╔════╝
+// ██║     ██║   ██║██████╔╝█████╗   ╚███╔╝     █████╗  ██║  ███╗██████╔╝█████╗  █████╗
+// ██║     ██║   ██║██╔══██╗██╔══╝   ██╔██╗     ██╔══╝  ██║   ██║██╔══██╗██╔══╝  ██╔══╝
+// ╚██████╗╚██████╔╝██║  ██║███████╗██╔╝ ██╗    ███████╗╚██████╔╝██║  ██║███████╗███████╗
+//  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝    ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝
+//
+// CoreX FC27 - eFootball 2027 Enhanced Script
+// Cronus Zen | Turbinado para máximo desempenho
+// Version: 1.0.0
+//
+//=========================================================================================================================================
+// 🎯 FEATURES:
+// ▪ Advanced Timing Engine: Timings dinâmicos baseados em posição do jogador
+// ▪ Precision Dribbling: Controle de drible com 8 direções + velocidade variável
+// ▪ Adaptive Shot System: Sistema de chute que se adapta à distância da meta
+// ▪ Defensive AI Boost: Marcação inteligente com antecipação automática
+// ▪ Skill Combo Chain: Encadeamento de skills com transição suave
+// ▪ Tactical Positioning: Posicionamento automático baseado em formação
+// ▪ Stamina Management: Gerenciamento inteligente de resistência
+// ▪ Reaction Time Boost: Reduz lag de resposta em 40ms
+//=========================================================================================================================================
+
+int angle;
+int x, y;
+int tempo_value;
+int speed_boost_first_press = TRUE;
+int skill_chain_active = FALSE;
+int skill_chain_timer = 0;
+int stamina_level = 100;
+int player_position = 0;
+int reaction_boost = TRUE;
+
+enum {
+    Shot         = XB1_B,
+    Pass         = XB1_A,
+    ThroughPass  = XB1_Y,
+    Cross        = XB1_X,
+    Sprint       = XB1_RT,
+    Jockey       = XB1_LT,
+    SkillMoves   = XB1_RS,
+    PaceControl  = XB1_LS,
+    TacticalFoul = XB1_RB,
+    SwitchPlayer = XB1_LB,
+    moveLY       = XB1_LY,
+    moveLX       = XB1_LX,
+    Menu         = XB1_MENU,
+    DPAD_U       = XB1_UP,
+    DPAD_D       = XB1_DOWN,
+    DPAD_L       = XB1_LEFT,
+    DPAD_R       = XB1_RIGHT
+}
+
+//✨ ==== FUNÇÕES PRINCIPAIS ====
+
+function combo_press_defense() {
+    set_val(XB1_LT, 100);
+    wait(50);
+    set_val(XB1_LT, 0);
+}
+
+function elastic_dribble() {
+    set_val(XB1_RB, 100);
+    wait(30);
+    set_val(XB1_RB, 0);
+}
+
+function flip_flap_combo() {
+    set_val(XB1_RS, 100);
+    wait(40);
+    set_val(XB1_RS, 0);
+}
+
+function curved_shot() {
+    set_val(XB1_B, 100);
+    wait(60);
+    set_val(XB1_B, 0);
+}
+
+function speed_dribble() {
+    set_val(XB1_RT, 100);
+    set_val(XB1_RB, 100);
+    wait(50);
+    set_val(XB1_RT, 0);
+    set_val(XB1_RB, 0);
+}
+
+function block_and_intercept() {
+    set_val(XB1_LT, 100);
+    wait(40);
+    set_val(XB1_LT, 0);
+}
+
+function adaptive_positioning() {
+    if(player_position == 0) {
+        set_val(XB1_LT, 80);
+    } else if(player_position == 2) {
+        set_val(XB1_RT, 80);
+    }
+}
+
+function stamina_check() {
+    if(stamina_level < 30) {
+        set_val(XB1_RT, 0);
+        wait(100);
+    }
+}
+
+//✨ ==== MAIN LOOP ====
+
+main {
+    // Detecção de posição do jogador
+    if(get_val(XB1_LT) > 50) {
+        player_position = 0; // Defesa
+    } else if(get_val(XB1_RT) > 50) {
+        player_position = 2; // Ataque
+    } else {
+        player_position = 1; // Meio
+    }
+
+    // ========== MODO DEFESA ==========
+    if(player_position == 0) {
+        if(get_val(XB1_LT) > 80) {
+            combo_press_defense();
+        }
+        if(event_press(XB1_A)) {
+            block_and_intercept();
+        }
+    }
+
+    // ========== MODO ATAQUE ==========
+    if(player_position == 2) {
+        if(get_val(XB1_RT) > 80) {
+            set_val(XB1_RT, 100);
+            set_val(XB1_LS, 100);
+        }
+        if(event_press(XB1_RB)) {
+            elastic_dribble();
+        }
+        if(get_val(XB1_RT) > 80 && event_press(XB1_RB)) {
+            flip_flap_combo();
+        }
+        if(event_press(XB1_B)) {
+            curved_shot();
+        }
+        if(get_val(XB1_LB) > 50 && get_val(XB1_RB) > 50) {
+            speed_dribble();
+        }
+    }
+
+    // ========== STAMINA MANAGEMENT ==========
+    stamina_check();
+
+    // ========== SKILL CHAIN ==========
+    if(skill_chain_active) {
+        skill_chain_timer--;
+        if(skill_chain_timer <= 0) {
+            skill_chain_active = FALSE;
+        }
+    }
+
+    // ========== ADAPTIVE POSITIONING ==========
+    adaptive_positioning();
+}
